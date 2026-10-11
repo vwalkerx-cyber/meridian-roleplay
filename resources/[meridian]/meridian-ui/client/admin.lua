@@ -82,16 +82,80 @@ local function OpenPlayerManagement(player)
                         TriggerServerEvent('meridian-ui:server:adminAction', 'giveMoney', player.source, { account = input[1], amount = input[2] })
                     end
                 end
+            },
+            {
+                title = 'Change Player Job & Grade',
+                description = 'Assign public service, law enforcement, or civilian career',
+                icon = 'briefcase',
+                onSelect = function()
+                    lib.callback('meridian-ui:server:getJobsList', false, function(jobs)
+                        if not jobs then return end
+                        local jobSelectOptions = {}
+                        for _, j in ipairs(jobs) do
+                            table.insert(jobSelectOptions, { value = j.name, label = j.label .. ' (' .. j.name .. ')' })
+                        end
+
+                        local input = lib.inputDialog('Change Job for ' .. player.name, {
+                            { type = 'select', label = 'Select Profession', options = jobSelectOptions, required = true },
+                            { type = 'number', label = 'Grade Level (e.g. 0, 1, 2, 3, 4)', default = 0, min = 0, max = 10, required = true }
+                        })
+
+                        if input and input[1] then
+                            TriggerServerEvent('meridian-ui:server:adminAction', 'setJob', player.source, { job = input[1], grade = input[2] })
+                            lib.notify({
+                                title = 'Staff Management',
+                                description = string.format("Job updated for %s to %s (Grade %d)", player.name, input[1], input[2]),
+                                type = 'success'
+                            })
+                        end
+                    end)
+                end
             }
         }
     })
     lib.showContext('meridian_admin_player_detail')
 end
 
+local tabletProp = nil
+
+local function PlayTabletAnimation()
+    local ped = PlayerPedId()
+    local animDict = "amb@code_human_in_bus_passenger_idles@female@tablet@base"
+    local animClip = "base"
+    local model = `prop_cs_tablet`
+
+    RequestAnimDict(animDict)
+    while not HasAnimDictLoaded(animDict) do Wait(0) end
+
+    RequestModel(model)
+    while not HasModelLoaded(model) do Wait(0) end
+
+    if not tabletProp or not DoesEntityExist(tabletProp) then
+        local coords = GetEntityCoords(ped)
+        tabletProp = CreateObject(model, coords.x, coords.y, coords.z, true, true, false)
+        AttachEntityToEntity(tabletProp, ped, GetPedBoneIndex(ped, 60309), 0.03, 0.002, -0.0, 10.0, 160.0, 0.0, true, false, false, false, 2, true)
+    end
+
+    TaskPlayAnim(ped, animDict, animClip, 3.0, 3.0, -1, 49, 0, false, false, false)
+end
+
+local function StopTabletAnimation()
+    local ped = PlayerPedId()
+    StopAnimTask(ped, "amb@code_human_in_bus_passenger_idles@female@tablet@base", "base", 3.0)
+    if tabletProp and DoesEntityExist(tabletProp) then
+        DeleteEntity(tabletProp)
+        tabletProp = nil
+    end
+end
+
 local function OpenAdminMenu()
+    PlayTabletAnimation()
     lib.registerContext({
         id = 'meridian_admin_main',
-        title = 'Meridian Roleplay Staff Dashboard',
+        title = '⚡ Meridian State — Staff Tablet',
+        onExit = function()
+            StopTabletAnimation()
+        end,
         options = {
             {
                 title = 'Self Options',

@@ -88,5 +88,33 @@ RegisterNetEvent('meridian-ui:server:adminAction', function(action, targetSource
                 account = payload.account
             })
         end
+    elseif action == 'setJob' then
+        local targetPlayer = QBCore.Functions.GetPlayer(targetSource)
+        if targetPlayer and payload.job then
+            targetPlayer.Functions.SetJob(payload.job, tonumber(payload.grade or 0))
+            exports['meridian-core']:LogAudit(adminCitizenId, "ADMIN_SET_JOB", {
+                target = targetSource,
+                job = payload.job,
+                grade = payload.grade
+            })
+        end
     end
+end)
+
+-- Callback: Fetch all jobs configured in the server
+lib.callback.register('meridian-ui:server:getJobsList', function(source)
+    if not IsAdmin(source) then return false end
+    local jobList = {}
+    for jobName, jobData in pairs(QBCore.Shared.Jobs) do
+        local grades = {}
+        for gradeLvl, gInfo in pairs(jobData.grades) do
+            table.insert(grades, { level = tonumber(gradeLvl), name = gInfo.name })
+        end
+        table.insert(jobList, {
+            name = jobName,
+            label = jobData.label,
+            grades = grades
+        })
+    end
+    return jobList
 end)
