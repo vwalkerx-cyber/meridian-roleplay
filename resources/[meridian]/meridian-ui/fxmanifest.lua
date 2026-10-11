@@ -21,5 +21,18 @@ shared_scripts {
 
 client_scripts {
     'client/main.lua',
-    'client/mdt.lua'
+    'client/mdt.lua',
+    'client/admin.lua'
+}
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    'server/admin.lua'
+}
+
+dependencies {
+    'meridian-core',
+    'qb-core',
+    'oxmysql',
+    'ox_lib'
 }
