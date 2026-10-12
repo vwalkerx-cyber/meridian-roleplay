@@ -22,11 +22,13 @@ shared_scripts {
 }
 
 client_scripts {
-    'client/logistics.lua'
+    'client/logistics.lua',
+    'client/jobs.lua'
 }
 
 server_scripts {
-    'server/logistics.lua'
+    'server/logistics.lua',
+    'server/jobs.lua'
 }
 
 dependencies {
