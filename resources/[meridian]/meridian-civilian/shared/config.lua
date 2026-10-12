@@ -131,6 +131,15 @@ CivilianConfig.DutyCheckpoints = {
     }
 }
 
+--[[
+    Taxi Job Vehicle Service & Garage
+--]]
+CivilianConfig.TaxiGarage = {
+    MarkerCoords = vec3(895.8, -179.4, 74.7),
+    SpawnCoords = vec4(900.5, -180.2, 73.7, 355.0),
+    VehicleModel = 'taxi'
+}
+
 CivilianConfig.Logistics = {
     -- Depot location (Port of Los Santos / Elysian Island)
     DepotCoords = vec3(153.25, -3211.5, 5.9),

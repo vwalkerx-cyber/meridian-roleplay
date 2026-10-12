@@ -102,6 +102,79 @@ local function ToggleDutyCheckpoint(stationName)
     end)
 end
 
+local function OpenTaxiGarageMenu()
+    local pData = QBCore.Functions.GetPlayerData()
+    if not (pData and pData.job and pData.job.name == 'taxi' and pData.job.onduty) then
+        lib.notify({
+            title = 'Taxi Depot',
+            description = 'You must be on duty as a Downtown Cab driver to access the taxi garage.',
+            type = 'error'
+        })
+        return
+    end
+
+    local options = {
+        {
+            title = 'Request Taxi Cab',
+            description = 'Spawn a company taxi vehicle for your work shift.',
+            icon = 'taxi',
+            onSelect = function()
+                local ped = PlayerPedId()
+                local spawnCfg = CivilianConfig.TaxiGarage.SpawnCoords
+                local model = CivilianConfig.TaxiGarage.VehicleModel or 'taxi'
+
+                QBCore.Functions.SpawnVehicle(model, function(veh)
+                    SetEntityHeading(veh, spawnCfg.w)
+                    TaskWarpPedIntoVehicle(ped, veh, -1)
+                    TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(veh))
+                    SetVehicleEngineOn(veh, true, true, false)
+                    lib.notify({
+                        title = 'Downtown Cab Co.',
+                        description = 'Company taxi dispatched. Drive safely!',
+                        type = 'success'
+                    })
+                end, spawnCfg, true)
+            end
+        },
+        {
+            title = 'Store Taxi Cab',
+            description = 'Return and store your taxi back into the garage.',
+            icon = 'warehouse',
+            onSelect = function()
+                local ped = PlayerPedId()
+                local veh = GetVehiclePedIsIn(ped, false)
+                if veh == 0 then
+                    local markerPos = CivilianConfig.TaxiGarage.MarkerCoords
+                    veh = GetClosestVehicle(markerPos.x, markerPos.y, markerPos.z, 5.0, 0, 71)
+                end
+
+                if veh and veh ~= 0 then
+                    QBCore.Functions.DeleteVehicle(veh)
+                    lib.notify({
+                        title = 'Downtown Cab Co.',
+                        description = 'Taxi cab stored back into depot.',
+                        type = 'info'
+                    })
+                else
+                    lib.notify({
+                        title = 'Taxi Depot',
+                        description = 'No taxi vehicle nearby to store.',
+                        type = 'error'
+                    })
+                end
+            end
+        }
+    }
+
+    lib.registerContext({
+        id = 'meridian_taxi_garage_menu',
+        title = 'Downtown Cab Co. Fleet Depot',
+        options = options
+    })
+
+    lib.showContext('meridian_taxi_garage_menu')
+end
+
 --[[
     Marker Render & Key Interaction Thread
 --]]
@@ -149,6 +222,22 @@ CreateThread(function()
                         if IsControlJustReleased(0, 38) then -- E
                             ToggleDutyCheckpoint(cp.name)
                         end
+                    end
+                end
+            end
+        end
+
+        -- 3. Taxi Garage Marker (Downtown Cab Co.)
+        if CivilianConfig.TaxiGarage and currentJob == 'taxi' and pData.job.onduty then
+            local taxiMarker = CivilianConfig.TaxiGarage.MarkerCoords
+            local distTaxi = #(pos - taxiMarker)
+            if distTaxi < 15.0 then
+                wait = 0
+                DrawMarker(36, taxiMarker.x, taxiMarker.y, taxiMarker.z, 0, 0, 0, 0, 0, 0, 0.7, 0.7, 0.7, 255, 204, 0, 200, false, true, 2, false, nil, nil, false)
+                if distTaxi < 2.5 then
+                    QBCore.Functions.DrawText3D(taxiMarker.x, taxiMarker.y, taxiMarker.z + 0.4, "[~y~E~w~] Taxi Fleet Garage")
+                    if IsControlJustReleased(0, 38) then -- E
+                        OpenTaxiGarageMenu()
                     end
                 end
             end
